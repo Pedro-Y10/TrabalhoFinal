@@ -1,0 +1,14 @@
+services:
+ sigachat_app:
+  image: proffernando/sigachat
+  ports:
+  - "8080:8080"
+  depends_on:
+  - banco
+  
+ banco:
+  image: postgres:17.2
+  environment:
+   POSTGRES_USER: postgres
+   POSTGRES_PASSWORD: aula1112
+   POSTGRES_DB: sigachat
