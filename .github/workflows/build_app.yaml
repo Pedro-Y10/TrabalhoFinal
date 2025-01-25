@@ -1,0 +1,44 @@
+# script de build automatizado da aplicacao
+name: Sigachat construcao
+
+on:
+ push:
+  branches:
+  - "main"
+jobs:
+ construcao-app:
+  runs-on: ubuntu-latest
+  steps:
+  - name: baixar codigo fonte
+    uses: actions/checkout@v4
+  - name: empacotar app
+    uses: actions/setup-java@v4
+    with:
+     distribution: 'oracle'
+     java-version: '21'
+  - name: executando maven
+    run: mvn clean install -DskipTests
+  - name: construir imagem docker
+    run: docker build -t proffernando/sigachat .
+  - name: login Dockerhub
+    run: docker login -u ${{secrets.DK_USER}} -p '${{secrets.DK_PASS}}'
+  - name: Envio da imagem
+    run: docker push proffernando/sigachat
+  - name: copia script de ambiente
+    uses: appleboy/scp-action@v0.1.7
+    with:
+     host: ${{ secrets.AWS_HOST }}
+     username: ${{ secrets.AWS_USERNAME }}
+     port: 22
+     key: ${{ secrets.AWS_KEY }}
+     source: "docker-compose.yaml"
+     target: "/home/ubuntu"
+
+ instalacao_aws:
+  runs-on: self-hosted
+  needs: construcao-app
+  steps:
+  - name: pegar o app
+    run: sudo docker pull proffernando/sigachat
+  - name: inicia os servicos
+    run: sudo docker compose up -d
